@@ -5,9 +5,9 @@ package editor
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/cubeflix/edit/buffer"
 	"github.com/gdamore/tcell"
@@ -88,7 +88,10 @@ func (e *Editor) Init() error {
 		lines := make([]*buffer.BufferLine, 0)
 		for {
 			str, err := scanner.ReadString('\n')
-			fmt.Println(str, err)
+			useCRLF := false
+			if strings.HasSuffix(str, "\r\n") {
+				useCRLF = true
+			}
 			if err != nil {
 				if err == io.EOF {
 					// EOF, break.
@@ -100,10 +103,15 @@ func (e *Editor) Init() error {
 				return err
 			}
 			line := buffer.NewBufferLine(MaxLineSize)
-			line.Insert([]rune(str[:len(str)-2]), 0)
+			var withoutNewline []rune
+			if useCRLF {
+				withoutNewline = []rune(str[:len(str)-2])
+			} else {
+				withoutNewline = []rune(str[:len(str)-1])
+			}
+			line.Insert(withoutNewline, 0)
 			lines = append(lines, line)
 		}
-		fmt.Println(lines)
 
 		// Set the buffer lines.
 		e.buffer.SetData(lines)
